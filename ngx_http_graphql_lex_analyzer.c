@@ -226,9 +226,6 @@ init:
                 token->len++;
             }
             break;
-                
-        default:
-            break;
         }
     }
 

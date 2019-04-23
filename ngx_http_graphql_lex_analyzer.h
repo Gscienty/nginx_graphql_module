@@ -13,13 +13,10 @@ enum ngx_http_graphql_lex_token {
 
 enum ngx_http_graphql_lex_match_status {
     ngx_http_graphql_lex_match_unknow,
-    ngx_http_graphql_lex_match_commas,
-    ngx_http_graphql_lex_match_punctuator,
     ngx_http_graphql_lex_match_name,
     ngx_http_graphql_lex_match_num,
-    ngx_http_graphql_lex_match_digit,
-    ngx_http_graphql_lex_match_dot,
     ngx_http_graphql_lex_match_str,
+    ngx_http_graphql_lex_match_punctuator
 };
 
 enum ngx_http_graphql_lex_match_int_status {
