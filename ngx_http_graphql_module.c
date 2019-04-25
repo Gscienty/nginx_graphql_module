@@ -1,4 +1,5 @@
 #include "ngx_http_graphql_module.h"
+#include "ngx_http_graphql_lex_analyzer.h"
 
 static void * ngx_http_graphql_create_loc_conf(ngx_conf_t * cf);
 static char * ngx_http_graphql(ngx_conf_t * cf, void * post, void * data);
@@ -46,7 +47,7 @@ ngx_module_t ngx_http_graphql_module = {
     NGX_MODULE_V1_PADDING
 };
 
-static ngx_str_t graphql_doc;
+static ngx_list_t * tokens;
 
 static void * ngx_http_graphql_create_loc_conf(ngx_conf_t * cf)
 {
@@ -69,7 +70,11 @@ static ngx_int_t ngx_http_graphql_handler(ngx_http_request_t * req)
     if (ret != NGX_OK) {
         return ret;
     }
-    ngx_str_t response = ngx_string("Hello World");
+    ngx_str_t response;
+
+    response.data = ngx_pcalloc(req->pool, 5);
+    ngx_sprintf(response.data, "%d", tokens->size);
+    response.len = 5;
 
     req->headers_out.status = NGX_HTTP_OK;
     ngx_str_set(&req->headers_out.content_type, "application/json");
@@ -99,18 +104,20 @@ static ngx_int_t ngx_http_graphql_handler(ngx_http_request_t * req)
 static char * ngx_http_graphql(ngx_conf_t * cf, void * post, void * data)
 {
     (void) post;
+    ngx_str_t * doc = data;
     ngx_http_core_loc_conf_t * core_loc_fc =
         ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module);
+
     core_loc_fc->handler = ngx_http_graphql_handler;
 
-    ngx_str_t * doc = data;
-
-    if (ngx_strcmp(doc->data, "") == 0) {
+    if (doc == NULL || ngx_strcmp(doc->data, "") == 0) {
         return NGX_CONF_ERROR;
     }
+    tokens = ngx_http_graphql_lex_analysis(cf->pool, doc);
 
-    graphql_doc.data = doc->data;
-    graphql_doc.len = ngx_strlen(doc->data);
+    if (tokens->size == 0) {
+        return NGX_CONF_ERROR;
+    }
 
     return NGX_CONF_OK;
 }

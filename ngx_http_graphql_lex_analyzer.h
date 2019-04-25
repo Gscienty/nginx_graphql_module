@@ -29,6 +29,6 @@ enum ngx_http_graphql_lex_match_int_status {
     ngx_http_graphql_lex_match_float_exp_num
 };
 
-ngx_list_t * ngx_http_graphql_lex_analysis(ngx_pool_t * pool, ngx_str_t doc);
+ngx_list_t * ngx_http_graphql_lex_analysis(ngx_pool_t * pool, ngx_str_t * doc);
 
 #endif
