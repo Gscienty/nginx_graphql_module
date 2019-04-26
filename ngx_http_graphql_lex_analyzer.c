@@ -46,7 +46,6 @@ ngx_list_t * ngx_http_graphql_lex_analysis(ngx_pool_t * pool, ngx_str_t * doc)
         = ngx_http_graphql_lex_match_unknow;
     ngx_list_t * list = ngx_list_create(pool, 8, sizeof(ngx_str_t));
     size_t i;
-    size_t j;
     ngx_str_t * token = NULL;
     enum ngx_http_graphql_lex_match_int_status int_status
         = ngx_http_graphql_lex_match_int_part_num;
@@ -55,13 +54,6 @@ ngx_list_t * ngx_http_graphql_lex_analysis(ngx_pool_t * pool, ngx_str_t * doc)
 init:
         switch (lex_status) {
         case ngx_http_graphql_lex_match_unknow:
-            // TODO debug
-            if (token != NULL) {
-                for (j = 0; j < token->len; j++) {
-                    printf("%c", token->data[j]);
-                }
-                printf("\n");
-            }
             token = NULL;
             lex_status = ngx_http_graphql_lex_analysis_unknow(doc->data[i]);
             if (lex_status != ngx_http_graphql_lex_match_unknow) {
@@ -170,7 +162,7 @@ init:
                 break;
 
             case ngx_http_graphql_lex_match_float_frac:
-                if ('0' <= doc->data[i] && doc->data[i] <= 9) {
+                if ('0' <= doc->data[i] && doc->data[i] <= '9') {
                     token->len++;
                 }
                 else if (doc->data[i] == 'e' || doc->data[i] == 'E') {
