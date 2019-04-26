@@ -8,7 +8,7 @@ static ngx_conf_post_handler_pt ngx_http_graphql_p = ngx_http_graphql;
 
 static ngx_command_t ngx_http_graphql_commands[] = {
     {
-        ngx_string("graphql"),
+        ngx_string("graphql_schema"),
         NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
         ngx_conf_set_str_slot,
         NGX_HTTP_LOC_CONF_OFFSET,

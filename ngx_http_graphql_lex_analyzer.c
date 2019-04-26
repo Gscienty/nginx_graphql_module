@@ -1,7 +1,5 @@
 #include "ngx_http_graphql_lex_analyzer.h"
 
-#include <stdio.h>
-
 static enum ngx_http_graphql_lex_match_status
 ngx_http_graphql_lex_analysis_unknow(u_char c)
 {
@@ -46,7 +44,7 @@ ngx_list_t * ngx_http_graphql_lex_analysis(ngx_pool_t * pool, ngx_str_t * doc)
         = ngx_http_graphql_lex_match_unknow;
     ngx_list_t * list = ngx_list_create(pool, 8, sizeof(ngx_str_t));
     size_t i;
-    ngx_str_t * token = NULL;
+    ngx_http_graphql_lex_token_t * token = NULL;
     enum ngx_http_graphql_lex_match_int_status int_status
         = ngx_http_graphql_lex_match_int_part_num;
 
@@ -64,8 +62,9 @@ init:
         case ngx_http_graphql_lex_match_name:
             if (token == NULL) {
                 token = ngx_list_push(list);
-                token->data = doc->data + i;
-                token->len = 1;
+                token->type = ngx_http_graphql_lex_token_type_name;
+                token->token.data = doc->data + i;
+                token->token.len = 1;
             }
             else {
                 switch (doc->data[i]) {
@@ -73,7 +72,7 @@ init:
                     case '0' ... '9':
                     case 'A' ... 'Z':
                     case 'a' ... 'z':
-                        token->len++;
+                        token->token.len++;
                         break;
                     default:
                         lex_status = ngx_http_graphql_lex_match_unknow;
@@ -85,14 +84,18 @@ init:
         case ngx_http_graphql_lex_match_punctuator:
             if (token == NULL) {
                 token = ngx_list_push(list);
-                token->data = doc->data + i;
-                token->len = 1;
+                token->type = ngx_http_graphql_lex_token_type_punctuator;
+                token->token.data = doc->data + i;
+                token->token.len = 1;
+                if (token->token.data[0] == ',') {
+                    token->type = ngx_http_graphql_lex_token_type_comma;
+                }
                 if (doc->data[i] != '.') {
                     lex_status = ngx_http_graphql_lex_match_unknow;
                 }
             }
-            else if (token->len < 3 && doc->data[i] == '.') {
-                token->len++;
+            else if (token->token.len < 3 && doc->data[i] == '.') {
+                token->token.len++;
             }
             else {
                 lex_status = ngx_http_graphql_lex_match_unknow;
@@ -102,13 +105,14 @@ init:
 
         case ngx_http_graphql_lex_match_num:
             if (token == NULL) {
+                token->type = ngx_http_graphql_lex_token_type_int_value;
                 token = ngx_list_push(list);
-                token->data = doc->data + i;
-                token->len = 1;
-                if (token->data[0] == '-') {
+                token->token.data = doc->data + i;
+                token->token.len = 1;
+                if (token->token.data[0] == '-') {
                     int_status = ngx_http_graphql_lex_match_int_negative_sign;
                 }
-                else if (token->data[0] == '0'){
+                else if (token->token.data[0] == '0'){
                     int_status = ngx_http_graphql_lex_match_int_zero;
                 }
                 else {
@@ -118,15 +122,14 @@ init:
             else switch (int_status) {
             case ngx_http_graphql_lex_match_int_negative_sign:
                 if (doc->data[i] == '0') {
-                    token->len++;
+                    token->token.len++;
                     int_status = ngx_http_graphql_lex_match_int_zero;
                 }
                 else if ('1' <= doc->data[i] && doc->data[i] <= '9') {
-                    token->len++;
+                    token->token.len++;
                     int_status = ngx_http_graphql_lex_match_int_part_num;
                 }
                 else {
-                    token = NULL;
                     lex_status = ngx_http_graphql_lex_match_unknow;
                     goto init;
                 }
@@ -134,10 +137,11 @@ init:
 
             case ngx_http_graphql_lex_match_int_part_num:
                 if ('0' <= doc->data[i] && doc->data[i] <= '9') {
-                    token->len++;
+                    token->token.len++;
                 }
                 else if (doc->data[i] == '.') {
-                    token->len++;
+                    token->type = ngx_http_graphql_lex_token_type_float_value;
+                    token->token.len++;
                     int_status = ngx_http_graphql_lex_match_float_frac;
                 }
                 else {
@@ -148,11 +152,12 @@ init:
 
             case ngx_http_graphql_lex_match_int_zero:
                 if (doc->data[i] == '.') {
-                    token->len++;
+                    token->type = ngx_http_graphql_lex_token_type_float_value;
+                    token->token.len++;
                     int_status = ngx_http_graphql_lex_match_float_frac;
                 }
                 else if (doc->data[i] == 'e' || doc->data[i] == 'E') {
-                    token->len++;
+                    token->token.len++;
                     int_status = ngx_http_graphql_lex_match_float_exp;
                 }
                 else {
@@ -163,10 +168,10 @@ init:
 
             case ngx_http_graphql_lex_match_float_frac:
                 if ('0' <= doc->data[i] && doc->data[i] <= '9') {
-                    token->len++;
+                    token->token.len++;
                 }
                 else if (doc->data[i] == 'e' || doc->data[i] == 'E') {
-                    token->len++;
+                    token->token.len++;
                     int_status = ngx_http_graphql_lex_match_float_exp;
                 }
                 else {
@@ -177,11 +182,11 @@ init:
 
             case ngx_http_graphql_lex_match_float_exp:
                 if (doc->data[i] == '+' || doc->data[i] == '-') {
-                    token->len++;
+                    token->token.len++;
                     int_status = ngx_http_graphql_lex_match_float_exp_sign;
                 }
                 else if ('0' <= doc->data[i] && doc->data[i] <= '9') {
-                    token->len++;
+                    token->token.len++;
                     int_status = ngx_http_graphql_lex_match_float_exp_num;
                 }
                 else {
@@ -192,7 +197,7 @@ init:
 
             case ngx_http_graphql_lex_match_float_exp_sign:
                 if ('0' <= doc->data[i] && doc->data[i] <= '9') {
-                    token->len++;
+                    token->token.len++;
                     int_status = ngx_http_graphql_lex_match_float_exp_num;
                 }
                 else {
@@ -203,7 +208,7 @@ init:
 
             case ngx_http_graphql_lex_match_float_exp_num:
                 if ('0' <= doc->data[i] && doc->data[i] <= '9') {
-                    token->len++;
+                    token->token.len++;
                 }
                 else {
                     lex_status = ngx_http_graphql_lex_match_unknow;
@@ -220,15 +225,16 @@ init:
         case ngx_http_graphql_lex_match_str:
             if (token == NULL) {
                 token = ngx_list_push(list);
-                token->data = doc->data + i;
-                token->len++;
+                token->type = ngx_http_graphql_lex_token_type_string_value;
+                token->token.data = doc->data + i;
+                token->token.len++;
             }
-            else if (doc->data[i] == '"' && token->data[token->len - 1] != '\\') {
-                token->len++;
+            else if (doc->data[i] == '"' && token->token.data[token->token.len - 1] != '\\') {
+                token->token.len++;
                 lex_status = ngx_http_graphql_lex_match_unknow;
             }
             else {
-                token->len++;
+                token->token.len++;
             }
             break;
         }
