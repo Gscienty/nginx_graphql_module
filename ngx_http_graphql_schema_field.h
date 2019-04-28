@@ -15,6 +15,16 @@ enum ngx_http_graphql_schema_field_syntax_status {
     ngx_http_graphql_schema_field_syntax_status_meta
 };
 
+enum ngx_http_graphql_schema_field_syntax_meta_status {
+    ngx_http_graphql_schema_field_syntax_meta_status_first_want_kv,
+    ngx_http_graphql_schema_field_syntax_meta_status_want_kv,
+    ngx_http_graphql_schema_field_syntax_meta_status_kv_finish,
+    ngx_http_graphql_schema_field_syntax_meta_status_type,
+    ngx_http_graphql_schema_field_syntax_meta_status_type_value,
+    ngx_http_graphql_schema_field_syntax_meta_status_sql_field,
+    ngx_http_graphql_schema_field_syntax_meta_status_sql_field_value
+};
+
 typedef struct ngx_http_graphql_schema_field_s ngx_http_graphql_schema_field_t;
 struct ngx_http_graphql_schema_field_s {
     enum ngx_http_graphql_schema_field_type type;
