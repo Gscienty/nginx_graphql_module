@@ -32,8 +32,8 @@ struct ngx_http_graphql_schema_field_s {
     ngx_str_t sql_field_name;
 };
 
-void ngx_http_graphql_schema_field_parse(ngx_list_part_t ** list_part,
-                                         ngx_uint_t * nth,
-                                         ngx_list_t * fields);
+const char * ngx_http_graphql_schema_field_parse(ngx_list_part_t ** list_part,
+                                                 ngx_uint_t * nth,
+                                                 ngx_list_t * fields);
 
 #endif
