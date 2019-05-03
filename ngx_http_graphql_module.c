@@ -1,5 +1,8 @@
 #include "ngx_http_graphql_module.h"
 #include "ngx_http_graphql_lex_analyzer.h"
+#include "ngx_http_graphql_schema_field.h"
+
+#include <stdio.h>
 
 static void * ngx_http_graphql_create_loc_conf(ngx_conf_t * cf);
 static char * ngx_http_graphql(ngx_conf_t * cf, void * post, void * data);
@@ -114,6 +117,32 @@ static char * ngx_http_graphql(ngx_conf_t * cf, void * post, void * data)
         return NGX_CONF_ERROR;
     }
     tokens = ngx_http_graphql_lex_analysis(cf->pool, doc);
+
+    ngx_list_t * fields = ngx_list_create(cf->pool,
+                                          8,
+                                          sizeof(ngx_http_graphql_schema_field_t));
+
+    ngx_list_part_t * p = &tokens->part;
+    ngx_uint_t i;
+    const char * ret = NGX_CONF_OK;
+
+    while (p != NULL) {
+        for (i = 0; i < p->nelts; i++) {
+            ret = ngx_http_graphql_schema_field_parse(&p, &i, fields);
+            if (ret != NGX_CONF_OK) {
+                return NGX_CONF_ERROR;
+            }
+            if (p == NULL) {
+                break;
+            }
+        }
+        if (p == NULL) {
+            break;
+        }
+        p = p->next;
+    }
+
+
 
     if (tokens->size == 0) {
         return NGX_CONF_ERROR;

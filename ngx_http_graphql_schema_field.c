@@ -10,15 +10,15 @@ const char * ngx_http_graphql_schema_field_parse(ngx_list_part_t ** list_part,
     enum ngx_http_graphql_schema_field_syntax_status status
         = ngx_http_graphql_schema_field_syntax_status_name;
     enum ngx_http_graphql_schema_field_syntax_meta_status meta_status
-        = ngx_http_graphql_schema_field_syntax_meta_status_want_kv;
+        = ngx_http_graphql_schema_field_syntax_meta_status_first_want_kv;
 
     if (*list_part == NULL) {
         return NGX_CONF_OK;
     }
 
     while (*list_part) {
-        for (; *nth < (*list_part)->nelts; nth++) {
-            token = (ngx_http_graphql_lex_token_t *) (*list_part)->elts;
+        for (; *nth < (*list_part)->nelts; (*nth)++) {
+            token = (ngx_http_graphql_lex_token_t *) (*list_part)->elts + *nth;
             switch (status) {
             case ngx_http_graphql_schema_field_syntax_status_name:
                 if (token->type != ngx_http_graphql_lex_token_type_name) {
@@ -32,7 +32,7 @@ const char * ngx_http_graphql_schema_field_parse(ngx_list_part_t ** list_part,
                 break;
 
             case ngx_http_graphql_schema_field_syntax_status_want_meta:
-                if (token->type == ngx_http_graphql_lex_token_punctuator
+                if (token->type == ngx_http_graphql_lex_token_type_punctuator
                     && token->token.data[0] == '(') {
                     status = ngx_http_graphql_schema_field_syntax_status_meta;
                 }
@@ -74,10 +74,10 @@ const char * ngx_http_graphql_schema_field_parse(ngx_list_part_t ** list_part,
                     switch (meta_status) {
                     case ngx_http_graphql_schema_field_syntax_meta_status_first_want_kv:
                     case ngx_http_graphql_schema_field_syntax_meta_status_want_kv:
-                        if (ngx_strcmp(token->token.data, "type") == 0) {
+                        if (ngx_strncmp(token->token.data, "type", token->token.len) == 0) {
                             meta_status = ngx_http_graphql_schema_field_syntax_meta_status_type;
                         }
-                        else if (ngx_strcmp(token->token.data, "sql_field") == 0) {
+                        else if (ngx_strncmp(token->token.data, "sql_field", token->token.len) == 0) {
                             meta_status = ngx_http_graphql_schema_field_syntax_meta_status_sql_field;
                         }
                         else {
@@ -98,13 +98,13 @@ const char * ngx_http_graphql_schema_field_parse(ngx_list_part_t ** list_part,
                         break;
 
                     case ngx_http_graphql_schema_field_syntax_meta_status_type_value:
-                        if (ngx_strcmp(token->token.data, "\"string\"") == 0) {
+                        if (ngx_strncmp(token->token.data, "\"string\"", token->token.len) == 0) {
                             field->type = ngx_http_graphql_schema_field_type_string;
                         }
-                        else if (ngx_strcmp(token->token.data, "\"int\"") == 0) {
+                        else if (ngx_strncmp(token->token.data, "\"int\"", token->token.len) == 0) {
                             field->type = ngx_http_graphql_schema_field_type_int;
                         }
-                        else if (ngx_strcmp(token->token.data, "\"float\"") == 0) {
+                        else if (ngx_strncmp(token->token.data, "\"float\"", token->token.len) == 0) {
                             field->type = ngx_http_graphql_schema_field_type_float;
                         }
                         else {

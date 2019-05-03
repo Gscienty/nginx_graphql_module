@@ -42,7 +42,7 @@ ngx_list_t * ngx_http_graphql_lex_analysis(ngx_pool_t * pool, ngx_str_t * doc)
 {
     enum ngx_http_graphql_lex_match_status lex_status
         = ngx_http_graphql_lex_match_unknow;
-    ngx_list_t * list = ngx_list_create(pool, 8, sizeof(ngx_str_t));
+    ngx_list_t * list = ngx_list_create(pool, 8, sizeof(ngx_http_graphql_lex_token_t));
     size_t i;
     ngx_http_graphql_lex_token_t * token = NULL;
     enum ngx_http_graphql_lex_match_int_status int_status
