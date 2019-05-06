@@ -42,7 +42,8 @@ const char * ngx_http_graphql_schema_field_parse(ngx_list_part_t ** list_part,
                 break;
 
             case ngx_http_graphql_schema_field_syntax_status_meta:
-                if (token->type == ngx_http_graphql_lex_token_type_punctuator) {
+                switch (token->type) {
+                case ngx_http_graphql_lex_token_type_punctuator:
                     switch (token->token.data[0]) {
                     case ')':
                         if (meta_status == ngx_http_graphql_schema_field_syntax_meta_status_kv_finish
@@ -60,7 +61,7 @@ const char * ngx_http_graphql_schema_field_parse(ngx_list_part_t ** list_part,
                             break;
                         default:
                             return NGX_CONF_ERROR;
-                        }
+                        } /* switch (meta_status) */
                         break;
                     case ',':
                         if (meta_status != ngx_http_graphql_schema_field_syntax_meta_status_kv_finish) {
@@ -68,9 +69,10 @@ const char * ngx_http_graphql_schema_field_parse(ngx_list_part_t ** list_part,
                         }
                         meta_status = ngx_http_graphql_schema_field_syntax_meta_status_want_kv;
                         break;
-                    }
-                }
-                else if (token->type == ngx_http_graphql_lex_token_type_name) {
+                    } /* switch (token->token.data[0]) */
+                    break;
+
+                case ngx_http_graphql_lex_token_type_name:
                     switch (meta_status) {
                     case ngx_http_graphql_schema_field_syntax_meta_status_first_want_kv:
                     case ngx_http_graphql_schema_field_syntax_meta_status_want_kv:
@@ -87,9 +89,10 @@ const char * ngx_http_graphql_schema_field_parse(ngx_list_part_t ** list_part,
 
                     default:
                         return NGX_CONF_ERROR;
-                    }
-                }
-                else if (token->type == ngx_http_graphql_lex_token_type_string_value) {
+                    } /* switch (meta_status) */
+                    break;
+
+                case ngx_http_graphql_lex_token_type_string_value:
                     switch (meta_status) {
                     case ngx_http_graphql_schema_field_syntax_meta_status_sql_field_value:
                         field->sql_field_name.data = token->token.data + 1;
@@ -115,14 +118,18 @@ const char * ngx_http_graphql_schema_field_parse(ngx_list_part_t ** list_part,
                         
                     default:
                         return NGX_CONF_ERROR;
-                    }
-                }
+                    } /* switch (meta_status) */
+                    break;
+
+                default:
+                    return NGX_CONF_ERROR;
+                } /* switch (token->type) */
                 break;
             }
         }
         *nth = 0;
         *list_part = (*list_part)->next;
-    }
+    } /* switch (*list_part) */
 
 ignore_one_token_finish:
     (*nth)++;
